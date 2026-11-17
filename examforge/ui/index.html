@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:;">
+  <title>ExamForge</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="17" height="17" rx="4"></rect>
+          <path d="M8 8.5h8M8 12h8M8 15.5h4.5"></path>
+        </svg>
+        <div class="brand-copy">
+          <span class="brand-name">ExamForge</span>
+          <span class="brand-sub">Evaluación sobre tu temario</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Secciones">
+        <button class="nav-item is-active" data-route="documents" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20V5A1.5 1.5 0 0 1 7.5 3.5Z"></path><path d="M14 3.5V8h4"></path></svg>
+          <span>Documentos</span>
+          <span class="nav-count" id="nav-doc-count">0</span>
+        </button>
+        <button class="nav-item" data-route="setup" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h6M14 18h6"></path><circle cx="16" cy="6" r="2"></circle><circle cx="8" cy="12" r="2"></circle><circle cx="12" cy="18" r="2"></circle></svg>
+          <span>Configurar test</span>
+        </button>
+        <button class="nav-item" data-route="exam" type="button" id="nav-exam" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"></path><circle cx="12" cy="12" r="3.5"></circle></svg>
+          <span>Examen</span>
+          <span class="nav-dot" id="nav-exam-dot" hidden></span>
+        </button>
+        <button class="nav-item" data-route="results" type="button" id="nav-results" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9M12 19V5M19 19v-7"></path></svg>
+          <span>Resultados</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="provider-chip" id="provider-chip" type="button" data-route="settings">
+          <span class="status-dot" id="provider-dot"></span>
+          <span class="provider-chip-copy">
+            <span class="provider-chip-label" id="provider-label">Groq</span>
+            <span class="provider-chip-hint" id="provider-hint">Sin clave configurada</span>
+          </span>
+        </button>
+        <button class="nav-item nav-item-quiet" id="theme-toggle" type="button" aria-label="Cambiar tema">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"></path></svg>
+          <span id="theme-label">Tema del sistema</span>
+        </button>
+        <button class="nav-item nav-item-quiet" data-route="settings" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"></path></svg>
+          <span>Ajustes</span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <p class="eyebrow" id="view-eyebrow">Preparación</p>
+          <h1 id="view-title">Documentos</h1>
+        </div>
+        <div class="topbar-actions" id="topbar-actions"></div>
+      </header>
+
+      <div class="content" id="content">
+        <section class="view is-active" data-view="documents">
+          <div class="layout two-col">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Material de estudio</h2>
+                  <p class="panel-sub">PDF y Markdown. El texto se procesa en local.</p>
+                </div>
+                <span class="counter" id="doc-count">0 archivos</span>
+              </div>
+              <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Añadir documentos">
+                <svg class="dropzone-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 16V4M7.5 8.5 12 4l4.5 4.5"></path>
+                  <path d="M4 15.5V19a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 19v-3.5"></path>
+                </svg>
+                <p class="dropzone-title">Arrastra aquí tus apuntes</p>
+                <p class="dropzone-hint">o selecciona archivos desde el disco</p>
+                <button class="btn btn-secondary btn-sm" id="browse-btn" type="button">Seleccionar archivos</button>
+                <p class="dropzone-limit">PDF y .md · máximo 50 MB por archivo</p>
+              </div>
+              <ul class="doc-list" id="doc-list"></ul>
+              <footer class="panel-foot" id="doc-summary">Todavía no has añadido material.</footer>
+            </article>
+
+            <article class="panel panel-preview">
+              <div class="panel-head">
+                <div>
+                  <h2>Vista previa</h2>
+                  <p class="panel-sub">Texto limpio y exclusiones detectadas.</p>
+                </div>
+                <button class="icon-btn" id="preview-toggle" type="button" title="Contraer vista previa" aria-label="Contraer vista previa">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"></path></svg>
+                </button>
+              </div>
+              <div class="empty-state" id="preview-empty">
+                <div class="empty-rule"></div>
+                <p>Selecciona un documento para revisar el texto extraído, el recuento de palabras y el material descartado.</p>
+              </div>
+              <div id="preview-content" hidden>
+                <div class="preview-heading">
+                  <div>
+                    <h3 id="preview-name">—</h3>
+                    <p class="muted" id="preview-meta">—</p>
+                  </div>
+                  <span class="chip" id="preview-tokens">0 tokens</span>
+                </div>
+                <div class="metric-row" id="preview-metrics"></div>
+                <div class="exclusion-box" id="preview-exclusions"></div>
+                <details class="raw-text">
+                  <summary>Texto extraído</summary>
+                  <pre id="preview-text"></pre>
+                </details>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" data-view="setup">
+          <div class="layout setup-layout">
+            <div class="stack">
+              <article class="panel">
+                <div class="panel-head">
+                  <div>
+                    <h2>Configuración del test</h2>
+                    <p class="panel-sub">El reparto se calcula sobre todo el temario válido.</p>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="question-count">Número de preguntas</label>
+                    <div class="number-input">
+                      <button type="button" class="stepper" data-step="-1" aria-label="Restar pregunta">−</button>
+                      <input id="question-count" type="number" min="1" max="100" step="1" value="20" inputmode="numeric">
+                      <button type="button" class="stepper" data-step="1" aria-label="Sumar pregunta">+</button>
+                    </div>
+                    <p class="field-hint">Entre 1 y 100. El cupo se reparte por extensión.</p>
+                  </div>
+
+                  <div class="field">
+                    <span class="label">Dificultad</span>
+                    <div class="segmented" id="difficulty-group" role="radiogroup" aria-label="Dificultad">
+                      <button type="button" data-difficulty="basic" role="radio" aria-checked="false">Básico</button>
+                      <button type="button" data-difficulty="university" class="is-active" role="radio" aria-checked="true">Universitario</button>
+                      <button type="button" data-difficulty="competitive" role="radio" aria-checked="false">Oposición</button>
+                    </div>
+                    <p class="field-hint" id="difficulty-hint">Comprensión, relación de conceptos y aplicación.</p>
+                  </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="field">
+                  <div class="field-heading">
+                    <span class="label">Formatos</span>
+                    <div class="preset-group">
+                      <button type="button" class="text-btn" data-preset="test">Solo test</button>
+                      <button type="button" class="text-btn" data-preset="mixed">Mixto 60/30/10</button>
+                      <button type="button" class="text-btn" data-preset="tf">Solo V/F</button>
+                    </div>
+                  </div>
+                  <div class="format-table">
+                    <label class="format-row" data-type="multiple_choice">
+                      <input type="checkbox" data-format="multiple_choice" checked>
+                      <span class="format-name">Tipo test <em>4 opciones, 1 correcta</em></span>
+                      <span class="format-share"><input type="number" min="0" max="100" value="100" data-weight="multiple_choice" aria-label="Porcentaje de tipo test"><span>%</span></span>
+                    </label>
+                    <label class="format-row" data-type="true_false">
+                      <input type="checkbox" data-format="true_false">
+                      <span class="format-name">Verdadero / Falso <em>afirmación única</em></span>
+                      <span class="format-share"><input type="number" min="0" max="100" value="0" data-weight="true_false" aria-label="Porcentaje de verdadero o falso" disabled><span>%</span></span>
+                    </label>
+                    <label class="format-row" data-type="short_answer">
+                      <input type="checkbox" data-format="short_answer">
+                      <span class="format-name">Respuesta corta <em>sin opciones</em></span>
+                      <span class="format-share"><input type="number" min="0" max="100" value="0" data-weight="short_answer" aria-label="Porcentaje de respuesta corta" disabled><span>%</span></span>
+                    </label>
+                  </div>
+                  <p class="field-hint" id="weight-status">Los porcentajes se normalizan para sumar 100.</p>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="form-grid">
+                  <div class="field">
+                    <span class="label">Temporizador</span>
+                    <div class="inline-field">
+                      <label class="switch">
+                        <input type="checkbox" id="timer-toggle" checked>
+                        <span class="switch-track" aria-hidden="true"></span>
+                        <span class="sr-only">Activar temporizador</span>
+                      </label>
+                      <input type="number" id="timer-minutes" class="small-input" min="1" max="240" value="30" aria-label="Minutos de examen"> <span class="muted">min</span>
+                    </div>
+                    <p class="field-hint">Al llegar a cero el test se entrega automáticamente.</p>
+                  </div>
+                  <div class="field">
+                    <span class="label">Corrección</span>
+                    <div class="inline-field">
+                      <label class="switch">
+                        <input type="checkbox" id="immediate-feedback">
+                        <span class="switch-track" aria-hidden="true"></span>
+                        <span class="sr-only">Mostrar corrección inmediata</span>
+                      </label>
+                      <span class="muted">Mostrar resultado tras cada respuesta</span>
+                    </div>
+                    <p class="field-hint">Si está desactivado, corriges al finalizar.</p>
+                  </div>
+                </div>
+
+                <details class="advanced" id="advanced-panel">
+                  <summary>Ajustes avanzados</summary>
+                  <div class="advanced-body">
+                    <div class="field">
+                      <label for="chunk-chars">Tamaño de bloque</label>
+                      <div class="inline-field">
+                        <input type="number" id="chunk-chars" class="small-input" min="1200" max="12000" step="300" value="4500">
+                        <span class="muted">caracteres</span>
+                      </div>
+                      <p class="field-hint">Bloques más pequeños dan más granularidad y más llamadas a la API.</p>
+                    </div>
+                    <p class="field-hint">Las palabras de exclusión se editan en <button type="button" class="text-btn" data-route="settings">Ajustes</button>.</p>
+                  </div>
+                </details>
+              </article>
+            </div>
+
+            <aside class="stack">
+              <article class="panel panel-sticky">
+                <div class="panel-head">
+                  <div>
+                    <h2>Plan de cobertura</h2>
+                    <p class="panel-sub">Así se reparten las preguntas.</p>
+                  </div>
+                  <span class="chip" id="coverage-chip">Sin calcular</span>
+                </div>
+                <div id="coverage-empty" class="empty-state compact">
+                  <p>Añade documentos para ver cómo se repartirá el examen por el temario.</p>
+                </div>
+                <div id="coverage-content" hidden>
+                  <dl class="summary-list" id="coverage-summary"></dl>
+                  <ol class="coverage-list" id="coverage-list"></ol>
+                </div>
+                <div class="callout" id="provider-callout"></div>
+                <div class="panel-actions">
+                  <button class="btn btn-primary btn-block" id="generate-btn" type="button" disabled>Generar examen</button>
+                  <p class="field-hint centered" id="generate-hint">Necesitas al menos un documento.</p>
+                </div>
+              </article>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" data-view="exam">
+          <div class="exam-layout">
+            <div class="exam-main">
+              <div class="exam-heading">
+                <div>
+                  <p class="eyebrow" id="exam-eyebrow">Examen en curso</p>
+                  <h2 id="exam-title">—</h2>
+                  <p class="muted" id="exam-meta">—</p>
+                </div>
+                <div class="timer" id="exam-timer">
+                  <span class="timer-label">Tiempo</span>
+                  <strong id="timer-value">--:--</strong>
+                </div>
+              </div>
+
+              <article class="question-card" id="question-card">
+                <div class="question-top">
+                  <span class="question-type" id="question-type">Tipo test</span>
+                  <span class="question-index" id="question-index">Pregunta 1 de 20</span>
+                  <button class="flag-btn" id="flag-btn" type="button" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4m0 0h10l-2 4 2 4H6"></path></svg>
+                    <span>Marcar</span>
+                  </button>
+                </div>
+                <h3 class="question-prompt" id="question-prompt">—</h3>
+                <div class="options" id="question-options"></div>
+                <div class="feedback" id="question-feedback" hidden></div>
+                <footer class="question-footer">
+                  <button class="btn btn-secondary" id="prev-btn" type="button">Anterior</button>
+                  <div class="question-footer-right">
+                    <button class="btn btn-secondary" id="skip-btn" type="button">Siguiente</button>
+                    <button class="btn btn-primary" id="next-btn" type="button">Siguiente</button>
+                  </div>
+                </footer>
+              </article>
+            </div>
+
+            <aside class="exam-side">
+              <div class="panel panel-compact">
+                <div class="panel-head">
+                  <h2>Navegación</h2>
+                  <span class="counter" id="answered-count">0/0</span>
+                </div>
+                <div class="progress-track"><span id="exam-progress-bar"></span></div>
+                <div class="question-grid" id="question-grid"></div>
+                <ul class="legend">
+                  <li><span class="legend-swatch is-answered"></span>Respondida</li>
+                  <li><span class="legend-swatch is-flagged"></span>Marcada</li>
+                  <li><span class="legend-swatch"></span>Pendiente</li>
+                </ul>
+              </div>
+              <div class="panel panel-compact">
+                <h2 class="side-title">Entrega</h2>
+                <p class="muted small">Puedes revisar tus respuestas antes de corregir. Las preguntas sin responder cuentan como fallo.</p>
+                <button class="btn btn-danger btn-block" id="submit-exam" type="button">Finalizar y corregir</button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" data-view="results">
+          <div class="results-layout">
+            <article class="panel result-summary">
+              <div class="score-block">
+                <div class="score-value" id="score-value">0%</div>
+                <div class="score-copy">
+                  <p class="eyebrow">Resultado</p>
+                  <h2 id="score-title">Examen finalizado</h2>
+                  <p class="muted" id="score-subtitle">—</p>
+                </div>
+              </div>
+              <div class="stat-row">
+                <div class="stat"><span class="stat-value" id="stat-correct">0</span><span class="stat-label">Aciertos</span></div>
+                <div class="stat"><span class="stat-value" id="stat-wrong">0</span><span class="stat-label">Fallos</span></div>
+                <div class="stat"><span class="stat-value" id="stat-unanswered">0</span><span class="stat-label">Sin responder</span></div>
+                <div class="stat"><span class="stat-value" id="stat-type">—</span><span class="stat-label">Mejor formato</span></div>
+              </div>
+              <div class="result-actions">
+                <button class="btn btn-secondary" id="export-md" type="button">Exportar Markdown</button>
+                <button class="btn btn-secondary" id="export-pdf" type="button">Exportar PDF</button>
+                <button class="btn btn-secondary" id="export-md-solutions" type="button">Markdown con soluciones</button>
+                <button class="btn btn-secondary" id="export-pdf-solutions" type="button">PDF con soluciones</button>
+                <button class="btn btn-primary" id="new-exam" type="button">Nuevo examen</button>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Revisión</h2>
+                  <p class="panel-sub">Cada fallo incluye la explicación y la cita del temario.</p>
+                </div>
+                <div class="segmented segmented-sm" id="review-filter">
+                  <button type="button" data-filter="all" class="is-active">Todas</button>
+                  <button type="button" data-filter="wrong">Fallos</button>
+                  <button type="button" data-filter="flagged">Marcadas</button>
+                </div>
+              </div>
+              <div id="warnings-box"></div>
+              <ol class="review-list" id="review-list"></ol>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" data-view="settings">
+          <div class="settings-layout">
+            <article class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Motor de generación</h2>
+                  <p class="panel-sub">Claves gratuitas, guardadas solo en este equipo.</p>
+                </div>
+              </div>
+              <div class="provider-options" id="provider-options">
+                <label class="provider-option" data-provider="groq">
+                  <input type="radio" name="provider" value="groq">
+                  <span class="provider-option-body">
+                    <span class="provider-option-top"><strong>Groq</strong><span class="chip chip-quiet">Llama 3.3 70B</span></span>
+                    <span class="provider-option-desc">Respuestas rápidas y nivel gratuito generoso.</span>
+                    <span class="key-status" data-key-status="groq">Sin clave</span>
+                  </span>
+                </label>
+                <label class="provider-option" data-provider="gemini">
+                  <input type="radio" name="provider" value="gemini">
+                  <span class="provider-option-body">
+                    <span class="provider-option-top"><strong>Google Gemini</strong><span class="chip chip-quiet">2.5 Flash</span></span>
+                    <span class="provider-option-desc">Buena comprensión de documentos extensos.</span>
+                    <span class="key-status" data-key-status="gemini">Sin clave</span>
+                  </span>
+                </label>
+                <label class="provider-option" data-provider="demo">
+                  <input type="radio" name="provider" value="demo">
+                  <span class="provider-option-body">
+                    <span class="provider-option-top"><strong>Modo demostración</strong><span class="chip chip-quiet">Local</span></span>
+                    <span class="provider-option-desc">Preguntas heurísticas sin conexión. Útil para probar el flujo.</span>
+                    <span class="key-status is-neutral">No usa API</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="stack-tight">
+                <div class="field">
+                  <label for="groq-key">API key de Groq</label>
+                  <div class="secret-row">
+                    <input id="groq-key" type="password" autocomplete="off" spellcheck="false" placeholder="gsk_…">
+                    <button class="btn btn-secondary btn-sm" type="button" data-test-provider="groq">Probar</button>
+                    <button class="icon-btn" type="button" data-clear-key="groq" title="Borrar clave guardada" aria-label="Borrar clave de Groq">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 12.5h9l1-12.5"></path></svg>
+                    </button>
+                  </div>
+                  <p class="field-hint">Se obtiene gratis en console.groq.com/keys. Se cifra con DPAPI.</p>
+                </div>
+                <div class="field">
+                  <label for="gemini-key">API key de Gemini</label>
+                  <div class="secret-row">
+                    <input id="gemini-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…">
+                    <button class="btn btn-secondary btn-sm" type="button" data-test-provider="gemini">Probar</button>
+                    <button class="icon-btn" type="button" data-clear-key="gemini" title="Borrar clave guardada" aria-label="Borrar clave de Gemini">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 12.5h9l1-12.5"></path></svg>
+                    </button>
+                  </div>
+                  <p class="field-hint">Se obtiene gratis en aistudio.google.com/apikey.</p>
+                </div>
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="groq-model">Modelo de Groq</label>
+                    <input id="groq-model" type="text" spellcheck="false" placeholder="llama-3.3-70b-versatile">
+                  </div>
+                  <div class="field">
+                    <label for="gemini-model">Modelo de Gemini</label>
+                    <input id="gemini-model" type="text" spellcheck="false" placeholder="gemini-2.5-flash">
+                  </div>
+                </div>
+                <div class="inline-actions">
+                  <button class="btn btn-secondary btn-sm" id="save-provider" type="button">Guardar configuración del motor</button>
+                </div>
+              </div>
+            </article>
+
+            <div class="stack">
+              <article class="panel">
+                <div class="panel-head"><h2>Exclusiones</h2></div>
+                <div class="field">
+                  <label for="exclusion-keywords">Palabras y frases fuera del temario</label>
+                  <textarea id="exclusion-keywords" rows="5" spellcheck="false"></textarea>
+                  <p class="field-hint">Una por línea. El filtro no distingue mayúsculas ni tildes.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="save-exclusions" type="button">Guardar exclusiones</button>
+              </article>
+
+              <article class="panel">
+                <div class="panel-head"><h2>Apariencia y valores por defecto</h2></div>
+                <div class="field">
+                  <span class="label">Tema</span>
+                  <div class="segmented" id="theme-options">
+                    <button type="button" data-theme-choice="light">Claro</button>
+                    <button type="button" data-theme-choice="dark">Oscuro</button>
+                    <button type="button" data-theme-choice="system">Sistema</button>
+                  </div>
+                </div>
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="default-count">Preguntas por defecto</label>
+                    <input type="number" id="default-count" min="1" max="100">
+                  </div>
+                  <div class="field">
+                    <label for="default-timer">Minutos por defecto</label>
+                    <input type="number" id="default-timer" min="1" max="240">
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="default-chunk">Tamaño de bloque por defecto</label>
+                  <input type="number" id="default-chunk" min="1200" max="12000" step="300">
+                </div>
+                <button class="btn btn-secondary btn-sm" id="save-defaults" type="button">Guardar preferencias</button>
+              </article>
+
+              <article class="panel">
+                <div class="panel-head"><h2>Datos y aplicación</h2></div>
+                <dl class="summary-list">
+                  <div><dt>Versión</dt><dd id="about-version">—</dd></div>
+                  <div><dt>Datos locales</dt><dd class="path-value" id="about-path">—</dd></div>
+                </dl>
+                <div class="inline-actions">
+                  <button class="btn btn-secondary btn-sm" id="open-data-dir" type="button">Abrir carpeta de datos</button>
+                  <button class="btn btn-secondary btn-sm" id="clear-session" type="button">Vaciar sesión</button>
+                </div>
+                <p class="field-hint">ExamForge no envía tus documentos a ningún servidor propio. Solo los bloques necesarios viajan al proveedor de IA que elijas.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="generation-overlay" id="generation-overlay" hidden>
+    <div class="generation-card">
+      <div class="generation-head">
+        <p class="eyebrow">Generando</p>
+        <h2 id="generation-title">Preparando el temario</h2>
+        <p class="muted" id="generation-message">Dividiendo el material en bloques equilibrados.</p>
+      </div>
+      <div class="progress-track progress-large"><span id="generation-bar"></span></div>
+      <div class="generation-foot">
+        <span id="generation-count">0 / 0</span>
+        <button class="text-btn" id="cancel-generation" type="button" hidden>Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+
+  <dialog class="modal" id="modal">
+    <form method="dialog" class="modal-card">
+      <h2 id="modal-title">Confirmar</h2>
+      <p id="modal-body"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" value="cancel" type="submit">Cancelar</button>
+        <button class="btn btn-primary" value="confirm" type="submit" id="modal-confirm">Continuar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
