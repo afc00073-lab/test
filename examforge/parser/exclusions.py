@@ -54,6 +54,11 @@ def _normalize(value: str) -> str:
 
 _MD_HEADING = re.compile(r"^(#{1,6})\s+(.+)$")
 _NUMBERED_HEADING = re.compile(r"^(\d{1,2}(?:\.\d{1,2}){0,3})[.)]?\s+(\S.{1,110})$")
+_LABELED_HEADING = re.compile(
+    r"^(tema|unidad|cap[ií]tulo|bloque|m[oó]dulo|lecci[oó]n)\s+"
+    r"(\d{1,2}(?:\.\d{1,2}){0,3})[.:)]?\s+(\S.{1,110})$",
+    re.IGNORECASE,
+)
 _SENTENCE_END = re.compile(r"[.;:,]$")
 
 
@@ -87,7 +92,7 @@ class ExclusionFilter:
         return sanitize_document(text, self)
 
 
-def _heading_level(line: str) -> tuple[int, str] | None:
+def detect_heading(line: str) -> tuple[int, str] | None:
     if len(line) > 140:
         return None
     md_match = _MD_HEADING.match(line)
@@ -99,6 +104,11 @@ def _heading_level(line: str) -> tuple[int, str] | None:
         numbering, title = numbered.groups()
         if len(title.split()) <= 16 and not _SENTENCE_END.search(title):
             return min(4, numbering.count(".") + 1), f"{numbering}. {title.strip()}"
+
+    labeled = _LABELED_HEADING.match(line)
+    if labeled:
+        label, numbering, title = labeled.groups()
+        return min(4, numbering.count(".") + 2), f"{label} {numbering}. {title.strip()}"
 
     letters = [char for char in line if char.isalpha()]
     if (
@@ -173,7 +183,7 @@ def sanitize_document(
         line = raw_line.strip()
 
         if excluded_until is not None:
-            heading = _heading_level(line) if line else None
+            heading = detect_heading(line) if line else None
             if heading and heading[0] <= excluded_until:
                 close_active()
                 excluded_until = None
@@ -188,7 +198,7 @@ def sanitize_document(
             line_number += 1
             continue
 
-        heading = _heading_level(line)
+        heading = detect_heading(line)
         if heading:
             flush_paragraph()
             level, title = heading
