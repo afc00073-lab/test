@@ -2,14 +2,16 @@
 
 from examforge.ai.generator import generate_exam
 from examforge.ai.providers import (
-    BaseProvider,
+    BaseHTTPProvider,
+    ChatProvider,
     GeminiProvider,
     GroqProvider,
     build_provider,
 )
 
 __all__ = [
-    "BaseProvider",
+    "BaseHTTPProvider",
+    "ChatProvider",
     "GeminiProvider",
     "GroqProvider",
     "build_provider",

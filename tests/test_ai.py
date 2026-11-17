@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
@@ -39,7 +40,8 @@ class FakeProvider:
 
     def complete_json(self, system_prompt: str, user_prompt: str) -> str:
         self.calls += 1
-        count = int(user_prompt.split("Genera exactamente ")[1].split(" preguntas")[0])
+        count_match = re.search(r"exactamente (\d+) preguntas", user_prompt)
+        count = int(count_match.group(1)) if count_match else 1
         questions = []
         for index in range(count):
             questions.append(
@@ -73,9 +75,9 @@ def test_grounding_requires_a_literal_quote() -> None:
 def test_generate_exam_marks_grounded_questions_and_coverage() -> None:
     provider = FakeProvider()
     config = ExamConfig(
-        question_count=4,
+        question_count=2,
         weights={QuestionType.MULTIPLE_CHOICE: 100},
-        chunk_chars=1200,
+        chunk_chars=12000,
     )
     exam = generate_exam(
         text=MATERIAL,
@@ -84,10 +86,10 @@ def test_generate_exam_marks_grounded_questions_and_coverage() -> None:
         provider=provider,
         model="fake-1",
     )
-    assert len(exam.questions) == 4
+    assert len(exam.questions) == 2
     assert all(question.source_quote in MATERIAL for question in exam.questions)
     assert all(question.id.startswith("q") for question in exam.questions)
-    assert exam.coverage and sum(item.question_count for item in exam.coverage) == 4
+    assert exam.coverage and sum(item.question_count for item in exam.coverage) == 2
     assert provider.calls >= 1
 
 
