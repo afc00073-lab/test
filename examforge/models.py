@@ -201,6 +201,7 @@ class DocumentSummary(BaseModel):
     kept_chars: int
     excluded_count: int
     excluded_chars: int
+    exclusions: list[dict[str, Any]] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     preview: str = ""
     title: str = ""
