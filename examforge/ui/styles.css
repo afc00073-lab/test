@@ -63,6 +63,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   height: 100%;
@@ -715,7 +719,8 @@ textarea {
   font-family: inherit;
 }
 
-.small-input {
+.small-input,
+.inline-field .small-input {
   width: 84px;
   flex: none;
 }

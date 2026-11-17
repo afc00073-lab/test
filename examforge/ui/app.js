@@ -137,12 +137,25 @@
       $("#modal-title").textContent = title;
       $("#modal-body").textContent = body;
       const button = $("#modal-confirm");
+      const cancelButton = $('button[value="cancel"]', modal);
       button.textContent = confirmLabel;
       button.className = "btn " + (danger ? "btn-danger" : "btn-primary");
-      const onClose = () => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        button.removeEventListener("click", onConfirm);
+        if (cancelButton) cancelButton.removeEventListener("click", onCancel);
+        modal.removeEventListener("cancel", onCancel);
         modal.removeEventListener("close", onClose);
-        resolve(modal.returnValue === "confirm");
+        resolve(value);
       };
+      const onConfirm = () => finish(true);
+      const onCancel = () => finish(false);
+      const onClose = () => finish(modal.returnValue === "confirm");
+      button.addEventListener("click", onConfirm);
+      if (cancelButton) cancelButton.addEventListener("click", onCancel);
+      modal.addEventListener("cancel", onCancel);
       modal.addEventListener("close", onClose);
       modal.returnValue = "cancel";
       modal.showModal();
@@ -218,8 +231,6 @@
       container.innerHTML = '<button class="btn btn-primary btn-sm" type="button" data-action="add-docs">Añadir documentos</button>';
     } else if (route === "setup") {
       container.innerHTML = '<button class="btn btn-secondary btn-sm" type="button" data-action="go-documents">Ver documentos</button>';
-    } else if (route === "results") {
-      container.innerHTML = '<button class="btn btn-secondary btn-sm" type="button" data-action="new-exam">Nuevo examen</button>';
     } else if (route === "settings") {
       container.innerHTML = '<button class="btn btn-secondary btn-sm" type="button" data-action="go-documents">Volver al material</button>';
     } else {
@@ -888,7 +899,6 @@
     $("#prev-btn").disabled = state.current === 0;
     const next = $("#next-btn");
     next.textContent = state.current === total - 1 ? "Finalizar" : "Siguiente";
-    $("#skip-btn").hidden = state.current === total - 1;
     renderQuestionGrid();
   }
 
@@ -1552,7 +1562,6 @@
 
     $("#prev-btn").addEventListener("click", () => navigate(-1));
     $("#next-btn").addEventListener("click", () => navigate(1));
-    $("#skip-btn").addEventListener("click", () => navigate(1));
     $("#flag-btn").addEventListener("click", toggleFlag);
     $("#submit-exam").addEventListener("click", () => submitExam(false));
     $("#question-options").addEventListener("input", (event) => {
