@@ -95,11 +95,11 @@ class _DocumentRecord:
 
 class ExamForgeApi:
     def __init__(self, store: ConfigStore | None = None) -> None:
-        self.store = store or ConfigStore()
-        self.settings = self.store.load_settings()
-        self.documents: dict[str, _DocumentRecord] = {}
-        self.current_exam: GeneratedExam | None = None
-        self.window: webview.Window | None = None
+        self._store = store or ConfigStore()
+        self._settings = self._store.load_settings()
+        self._documents: dict[str, _DocumentRecord] = {}
+        self._current_exam: GeneratedExam | None = None
+        self._native_window: webview.Window | None = None
         self._lock = threading.RLock()
         self._generation_lock = threading.Lock()
 
@@ -109,9 +109,9 @@ class ExamForgeApi:
 
     @api_method
     def bootstrap(self) -> dict[str, Any]:
-        self.settings = self.store.load_settings()
+        self._settings = self._store.load_settings()
         return {
-            "settings": public_settings(self.store, self.settings, __version__),
+            "settings": public_settings(self._store, self._settings, __version__),
             "version": __version__,
         }
 
@@ -136,15 +136,15 @@ class ExamForgeApi:
 
         errors: list[dict[str, str]] = []
         added: list[DocumentSummary] = []
-        exclusion_filter = ExclusionFilter(self.settings.exclusion_keywords)
+        exclusion_filter = ExclusionFilter(self._settings.exclusion_keywords)
 
         with self._lock:
             existing_paths = {
                 str(Path(record.extracted.path).expanduser().resolve())
-                for record in self.documents.values()
+                for record in self._documents.values()
             }
             for raw_path in cleaned:
-                if len(self.documents) >= MAX_DOCUMENTS:
+                if len(self._documents) >= MAX_DOCUMENTS:
                     errors.append(
                         {
                             "name": Path(raw_path).name,
@@ -166,7 +166,7 @@ class ExamForgeApi:
                 except ExamForgeError as exc:
                     errors.append({"name": Path(raw_path).name, "message": exc.message})
                     continue
-                self.documents[summary.id] = _DocumentRecord(summary, extracted, sanitized)
+                self._documents[summary.id] = _DocumentRecord(summary, extracted, sanitized)
                 existing_paths.add(resolved)
                 added.append(summary)
 
@@ -181,7 +181,7 @@ class ExamForgeApi:
             return {
                 "documents": [
                     record.summary.model_dump(mode="json")
-                    for record in self.documents.values()
+                    for record in self._documents.values()
                 ]
             }
 
@@ -197,16 +197,16 @@ class ExamForgeApi:
     @api_method
     def remove_document(self, document_id: str) -> dict[str, Any]:
         with self._lock:
-            if document_id not in self.documents:
+            if document_id not in self._documents:
                 raise ConfigurationError("El documento ya no está en la sesión.")
-            del self.documents[document_id]
+            del self._documents[document_id]
         return {"removed": document_id}
 
     @api_method
     def clear_session(self) -> dict[str, Any]:
         with self._lock:
-            self.documents.clear()
-            self.current_exam = None
+            self._documents.clear()
+            self._current_exam = None
         return {"cleared": True}
 
     # ------------------------------------------------------------------
@@ -244,10 +244,10 @@ class ExamForgeApi:
         payload = payload or {}
         config = self._config_from_payload(payload)
         with self._lock:
-            if not self.documents:
+            if not self._documents:
                 raise GenerationError("Añade al menos un documento antes de generar.")
             text = self._combined_text()
-            document_names = [record.summary.name for record in self.documents.values()]
+            document_names = [record.summary.name for record in self._documents.values()]
         if len(text) < 200:
             raise GenerationError("El material válido es demasiado breve para un examen.")
 
@@ -255,7 +255,7 @@ class ExamForgeApi:
             raise GenerationError("Ya hay una generación en curso.")
         try:
             self._emit_progress(0, 1, "Preparando el material")
-            provider_name = self.settings.provider
+            provider_name = self._settings.provider
             if provider_name is ProviderName.DEMO:
                 exam = generate_demo_exam(
                     text=text,
@@ -267,13 +267,13 @@ class ExamForgeApi:
                 )
                 model = "heuristic-v1"
             else:
-                api_key = self.store.load_secret(provider_name)
+                api_key = self._store.load_secret(provider_name)
                 if not api_key:
                     raise ConfigurationError(
                         "Falta la API key del proveedor elegido. Añádela en Ajustes "
                         "o usa el modo demostración."
                     )
-                provider = build_provider(self.settings, api_key)
+                provider = build_provider(self._settings, api_key)
                 exam = generate_exam(
                     text=text,
                     document_names=document_names,
@@ -288,7 +288,7 @@ class ExamForgeApi:
             exam.provider = provider_name.value
             exam.model = model
             with self._lock:
-                self.current_exam = exam
+                self._current_exam = exam
             return {"exam": exam.model_dump(mode="json")}
         finally:
             self._generation_lock.release()
@@ -334,7 +334,7 @@ class ExamForgeApi:
             raise ConfigurationError("Los ajustes no tienen un formato válido.")
         allowed = set(AppSettings.model_fields)
         updates = {key: value for key, value in payload.items() if key in allowed}
-        merged = {**self.settings.model_dump(mode="json"), **updates}
+        merged = {**self._settings.model_dump(mode="json"), **updates}
         try:
             settings = AppSettings.model_validate(merged)
         except ValidationError as exc:
@@ -349,15 +349,15 @@ class ExamForgeApi:
                 if name not in {"groq", "gemini"}:
                     continue
                 if isinstance(value, str) and value.strip():
-                    self.store.save_secret(ProviderName(name), value)
+                    self._store.save_secret(ProviderName(name), value)
         clear_key = payload.get("clear_key")
         if clear_key in {"groq", "gemini"}:
-            self.store.save_secret(ProviderName(clear_key), "")
+            self._store.save_secret(ProviderName(clear_key), "")
 
-        self.store.save_settings(settings)
-        self.settings = settings
+        self._store.save_settings(settings)
+        self._settings = settings
         return {
-            "settings": public_settings(self.store, settings, __version__),
+            "settings": public_settings(self._store, settings, __version__),
         }
 
     @api_method
@@ -368,10 +368,10 @@ class ExamForgeApi:
         if name not in {ProviderName.GROQ.value, ProviderName.GEMINI.value}:
             raise ConfigurationError("Proveedor no reconocido.")
         provider_name = ProviderName(name)
-        api_key = str(payload.get("api_key", "")).strip() or self.store.load_secret(provider_name)
+        api_key = str(payload.get("api_key", "")).strip() or self._store.load_secret(provider_name)
         if not api_key:
             raise ConfigurationError("Introduce una API key antes de probar la conexión.")
-        settings = self.settings.model_copy(update={"provider": provider_name})
+        settings = self._settings.model_copy(update={"provider": provider_name})
         provider = build_provider(settings, api_key)
         provider.complete_json(
             "Responde exclusivamente con JSON válido.",
@@ -384,7 +384,7 @@ class ExamForgeApi:
 
     @api_method
     def open_data_dir(self) -> dict[str, Any]:
-        path = self.store.base
+        path = self._store.base
         if os.name == "nt":
             os.startfile(str(path))  # type: ignore[attr-defined]
         else:
@@ -398,8 +398,8 @@ class ExamForgeApi:
     # ------------------------------------------------------------------
 
     def _window(self) -> webview.Window:
-        if self.window is not None:
-            return self.window
+        if self._native_window is not None:
+            return self._native_window
         windows = webview.windows
         if not windows:
             raise ConfigurationError("La ventana de la aplicación no está disponible.")
@@ -414,7 +414,7 @@ class ExamForgeApi:
         return [str(item) for item in result if str(item).strip()]
 
     def _record(self, document_id: str) -> _DocumentRecord:
-        record = self.documents.get(document_id)
+        record = self._documents.get(document_id)
         if record is None:
             raise ConfigurationError("El documento solicitado no está en la sesión.")
         return record
@@ -458,7 +458,7 @@ class ExamForgeApi:
     def _combined_text(self) -> str:
         with self._lock:
             parts: list[str] = []
-            for record in self.documents.values():
+            for record in self._documents.values():
                 body = re.sub(
                     r"^(#{1,5})\s+",
                     r"#\1 ",
@@ -479,8 +479,8 @@ class ExamForgeApi:
                 difficulty=payload.get("difficulty", "university"),
                 timer_minutes=payload.get("timer_minutes"),
                 immediate_feedback=bool(payload.get("immediate_feedback", False)),
-                chunk_chars=int(payload.get("chunk_chars", self.settings.chunk_chars)),
-                exclusion_keywords=self.settings.exclusion_keywords,
+                chunk_chars=int(payload.get("chunk_chars", self._settings.chunk_chars)),
+                exclusion_keywords=self._settings.exclusion_keywords,
                 detect_exclusions=True,
             )
         except (ValidationError, ValueError) as exc:
@@ -503,11 +503,11 @@ class ExamForgeApi:
         return paths[0] if paths else None
 
     def _emit_progress(self, current: int, total: int, message: str) -> None:
-        if self.window is None:
+        if self._native_window is None:
             return
         payload = json.dumps([current, total, message], ensure_ascii=False)
         try:
-            self.window.evaluate_js(
+            self._native_window.evaluate_js(
                 f"window.ExamForge && window.ExamForge.onGenerationProgress(...{payload})"
             )
         except Exception:  # pragma: no cover - la ventana puede estar cerrándose

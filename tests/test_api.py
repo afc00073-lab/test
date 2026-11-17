@@ -41,6 +41,13 @@ def _write_source(tmp_path: Path) -> Path:
     return source
 
 
+def test_bridge_state_stays_private(api: ExamForgeApi) -> None:
+    # PyWebView serializes every public attribute of the js_api object and
+    # follows nested objects, so session state must never be public.
+    public = {name for name in vars(api) if not name.startswith("_")}
+    assert public == set()
+
+
 def test_document_ingestion_and_coverage(api: ExamForgeApi, tmp_path: Path) -> None:
     source = _write_source(tmp_path)
     response = api.add_documents([str(source)])

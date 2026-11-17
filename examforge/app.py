@@ -145,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
         confirm_close=False,
         easy_drag=False,
     )
-    api.window = window
+    api._native_window = window
 
     try:
         window.events.loaded += lambda: _bind_drop_zone(window)
