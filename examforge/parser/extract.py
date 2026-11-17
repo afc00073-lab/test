@@ -124,6 +124,11 @@ def _extract_markdown(path: Path) -> tuple[str, None, list[str]]:
     raw = re.sub(r"!\[([^\]]*)\]\([^)]+\)", r"\1", raw)
     raw = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", raw)
     raw = re.sub(r"`{3}.*?`{3}", lambda match: match.group(0).strip("`"), raw, flags=re.DOTALL)
+    raw = re.sub(r"`([^`\n]+)`", r"\1", raw)
+    raw = re.sub(r"(\*\*|__)(.+?)\1", r"\2", raw, flags=re.DOTALL)
+    raw = re.sub(r"(?<![\w*])\*([^*\n]+)\*(?![\w*])", r"\1", raw)
+    raw = re.sub(r"(?<![\w_])_([^_\n]+)_(?![\w_])", r"\1", raw)
+    raw = re.sub(r"<[^>\n]{1,80}>", "", raw)
     return raw, None, warnings
 
 
