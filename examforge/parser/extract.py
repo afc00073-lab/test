@@ -147,12 +147,19 @@ def _extract_pdf(path: Path) -> tuple[str, int, list[str]]:
 
         pages_text: list[list[str]] = []
         empty_pages = 0
+        table_pages = 0
         for page in document:
-            page_text = page.get_text("text", sort=True) or ""
-            lines = [line.strip() for line in page_text.splitlines() if line.strip()]
+            lines, has_tables = _page_content(page)
             if not lines:
                 empty_pages += 1
+            if has_tables:
+                table_pages += 1
             pages_text.append(lines)
+
+        if table_pages:
+            warnings.append(
+                f"Se reconstruyeron tablas en {table_pages} página(s) como filas de texto."
+            )
 
         if empty_pages == document.page_count:
             raise EmptyDocumentError(
@@ -173,6 +180,64 @@ def _extract_pdf(path: Path) -> tuple[str, int, list[str]]:
         return text, document.page_count, warnings
     finally:
         document.close()
+
+
+def _page_content(page: "pymupdf.Page") -> tuple[list[str], bool]:
+    """Texto de la página, sustituyendo las tablas por filas Markdown.
+
+    PyMuPDF duplica el contenido de una tabla al extraer bloques y celdas, por
+    eso se descartan los bloques cuyo rectángulo se solapa con una tabla.
+    """
+    tables: list[object] = []
+    try:
+        finder = page.find_tables()
+        tables = list(finder.tables)
+    except Exception:  # las tablas son opcionales; nunca deben romper la lectura
+        tables = []
+
+    table_rects = [pymupdf.Rect(table.bbox) for table in tables]  # type: ignore[attr-defined]
+    lines: list[str] = []
+    for block in page.get_text("blocks", sort=True) or []:
+        if len(block) >= 7 and block[6] != 0:
+            continue
+        block_rect = pymupdf.Rect(block[:4])
+        if any(block_rect.intersects(rect) for rect in table_rects):
+            continue
+        lines.extend(
+            line.strip()
+            for line in str(block[4]).splitlines()
+            if line.strip()
+        )
+
+    for table in tables:
+        try:
+            rows = table.extract()  # type: ignore[attr-defined]
+        except Exception:
+            continue
+        rendered = _render_table(rows)
+        if rendered:
+            lines.extend(["", *rendered, ""])
+    return lines, bool(tables)
+
+
+def _render_table(rows: list[list[str | None]] | None) -> list[str]:
+    if not rows:
+        return []
+    cleaned: list[list[str]] = []
+    for row in rows:
+        cells = [
+            re.sub(r"\s+", " ", str(cell or "")).strip().replace("|", "\\|")[:240]
+            for cell in row
+        ]
+        if any(cells) and cells not in cleaned:
+            cleaned.append(cells)
+    if len(cleaned) < 2:
+        return []
+    width = max(len(row) for row in cleaned)
+    normalized = [row + [""] * (width - len(row)) for row in cleaned]
+    if width == 1:
+        return [row[0] for row in normalized if row[0]]
+    return ["| " + " | ".join(row) + " |" for row in normalized]
 
 
 def _remove_running_headers(pages: list[list[str]]) -> list[list[str]]:
