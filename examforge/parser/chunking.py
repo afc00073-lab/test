@@ -110,13 +110,31 @@ def build_pieces(text: str, max_chars: int = 4500) -> list[Piece]:
 
     merged: list[Piece] = []
     minimum = min(500, max(180, max_chars // 8))
+    pending: Piece | None = None
     for piece in pieces:
-        if merged and piece.chars < minimum:
-            previous = merged[-1]
-            previous.text = f"{previous.text}\n\n{piece.text}"
-            previous.sections = _unique(previous.sections + piece.sections)
+        if pending is not None:
+            piece = Piece(
+                f"{pending.text}\n\n{piece.text}",
+                _unique(pending.sections + piece.sections),
+            )
+            pending = None
+        if piece.chars < minimum:
+            if merged:
+                previous = merged[-1]
+                previous.text = f"{previous.text}\n\n{piece.text}"
+                previous.sections = _unique(previous.sections + piece.sections)
+            else:
+                pending = piece
         else:
             merged.append(piece)
+    if pending is not None:
+        if merged:
+            merged[0] = Piece(
+                f"{pending.text}\n\n{merged[0].text}",
+                _unique(pending.sections + merged[0].sections),
+            )
+        else:
+            merged.append(pending)
     return merged
 
 
